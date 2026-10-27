@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>جرد 2BROTHER</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Cairo',sans-serif;background:#f5f1ea;color:#1a120a;min-height:100vh}
+.header{background:#1a120a;color:#fff;padding:18px 18px 14px;position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:20px}.header h1 span{color:#c49a6c}
+.header.actions button{background:#2a2218;color:#c49a6c;border:none;padding:8px 14px;border-radius:100px;font-family:'Cairo';font-weight:900;font-size:12px;cursor:pointer}
+.wrap{padding:14px 14px 120px;max-width:600px;margin:0 auto}
+.search{width:100%;padding:14px 18px;border-radius:100px;border:2px solid #efe6d8;font-family:'Cairo';margin-bottom:12px;outline:none}
+.card{background:#fff;border-radius:20px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;box-shadow:0 4px 20px #0000000d;border:1px solid #efe6d8}
+.card b{font-size:16px}.num{font-size:26px;font-weight:900}
+.num.zero{color:#c5b9a8}.num.neg{color:#d00000}
+.fab{position:fixed;bottom:18px;z-index:20}
+.fab-right{right:12px}.fab-left{left:12px}
+.fab button{border:none;padding:15px 24px;border-radius:100px;font-weight:900;font-size:14px;cursor:pointer;font-family:'Cairo';box-shadow:0 8px 25px #0003}
+.btn-create{background:#1a120a;color:#fff}.btn-edit{background:#c49a6c;color:#1a120a}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+.modal.show{display:flex}
+.box{background:#fff;width:100%;max-width:420px;border-radius:26px;padding:24px}
+.box h3{font-size:19px;margin-bottom:14px}
+.box input{width:100%;padding:13px 16px;border-radius:14px;border:2px solid #efe6d8;font-family:'Cairo';font-size:15px;outline:none;margin-bottom:10px}
+.row{display:flex;gap:8px;margin-top:6px}
+.row button{flex:1;padding:12px;border-radius:14px;border:none;font-weight:900;font-family:'Cairo';cursor:pointer}
+.save{background:#1a120a;color:#fff}.cancel{background:#f5f1ea}
+.btn-galy{background:#1a120a;color:#fff}.btn-baat{background:#d00000;color:#fff}
+.btn-del{background:#fff0f0;color:#d00000;border:1px solid #ffd4d4!important}
+.list{max-height:45vh;overflow:auto;display:grid;gap:7px;margin:12px 0}
+.list-item{padding:12px 14px;border-radius:14px;border:2px solid #efe6d8;display:flex;justify-content:space-between;cursor:pointer;font-weight:800}
+.list-item.active{border-color:#1a120a;background:#1a120a;color:#fff}
+.empty{text-align:center;padding:50px 20px;opacity:.4}
+.total{background:#1a120a;color:#fff;border-radius:18px;padding:14px 18px;display:flex;justify-content:space-between;margin-bottom:14px;font-weight:900}
+</style>
+</head>
+<body>
+<div class="header">
+<div><h1>جرد <span>2BROTHER</span></h1><div style="opacity:.5;font-size:11px">01061273616</div></div>
+<div class="actions"><button onclick="resetAll()">تصفير الكل</button></div>
+</div>
+<div class="wrap">
+<input id="search" class="search" placeholder="🔍 دور على صنف..." oninput="render()">
+<div id="totalBox"></div>
+<div id="main"></div>
+</div>
+<div class="fab fab-right"><button class="btn-create" onclick="openCreate()">+ إنشاء</button></div>
+<div class="fab fab-left"><button class="btn-edit" onclick="openEdit()">تعديل</button></div>
+
+<div class="modal" id="mCreate"><div class="box">
+<h3>إنشاء صنف</h3>
+<input id="newName" placeholder="اسم الصنف">
+<div class="row"><button class="cancel" onclick="closeM()">إلغاء</button><button class="save" onclick="doCreate()">حفظ</button></div>
+</div></div>
+
+<div class="modal" id="mEdit"><div class="box">
+<h3>تعديل الجرد</h3>
+<div class="list" id="editList"></div>
+<input id="editNum" type="number" inputmode="numeric" placeholder="العدد">
+<div class="row"><button class="btn-galy" onclick="doChange(1)">جالي +</button><button class="btn-baat" onclick="doChange(-1)">بعت -</button></div>
+<div class="row" style="margin-top:8px"><button class="btn-del" onclick="deleteItem()">🗑️ حذف الصنف ده</button></div>
+<div class="row" style="margin-top:8px"><button class="cancel" style="width:100%" onclick="closeM()">إغلاق</button></div>
+</div></div>
+
+<script>
+let items = JSON.parse(localStorage.getItem('2bro_v2')||'[]');
+let sel = null;
+const save=()=>{localStorage.setItem('2bro_v2',JSON.stringify(items));render()};
+function render(){
+  const q = (document.getElementById('search').value||'').trim();
+  const filtered = items.filter(i=>i.name.includes(q));
+  const total = items.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('totalBox').innerHTML = items.length?`<div class="total"><span>إجمالي القطع</span><span>${total}</span></div>`:'';
+  const main=document.getElementById('main');
+  if(filtered.length===0){ main.innerHTML = items.length?'<div class="empty">مفيش نتيجة</div>':'<div class="empty">📦<br>مفيش اصناف<br>دوس إنشاء</div>'; return; }
+  main.innerHTML = filtered.map(i=>`<div class="card"><b>${i.name}</b><div class="num ${i.qty==0?'zero':i.qty<0?'neg':''}">${i.qty}</div></div>`).join('');
+}
+function openCreate(){document.getElementById('newName').value='';document.getElementById('mCreate').classList.add('show')}
+function openEdit(){
+  if(!items.length){alert('اعمل صنف الاول');return;}
+  if(!sel) sel=items[0].id;
+  build();document.getElementById('editNum').value='';document.getElementById('mEdit').classList.add('show');
+}
+function closeM(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('show'))}
+function doCreate(){
+  const n=document.getElementById('newName').value.trim();
+  if(!n) return alert('اكتب الاسم');
+  items.push({id:Date.now(),name:n,qty:0});save();closeM();
+}
+function build(){
+  document.getElementById('editList').innerHTML=items.map(i=>`<div class="list-item ${sel===i.id?'active':''}" onclick="sel=${i.id};build()"><span>${i.name}</span><span>${i.qty}</span></div>`).join('');
+}
+function doChange(dir){
+  const v=parseInt(document.getElementById('editNum').value);
+  if(isNaN(v)||v<0) return alert('اكتب رقم موجب');
+  const it=items.find(x=>x.id===sel); if(!it) return;
+  it.qty += dir===1? v : -v;
+  save();build();document.getElementById('editNum').value='';
+}
+function deleteItem(){
+  if(!sel) return;
+  if(!confirm('متأكد عايز تحذف الصنف ده؟')) return;
+  items=items.filter(x=>x.id!==sel);sel=items[0]?.id||null;save();build();
+  if(items.length===0) closeM();
+}
+function resetAll(){
+  if(!items.length) return;
+  if(!confirm('هتصفر كل الأرصدة لـ 0 ؟')) return;
+  items.forEach(i=>i.qty=0);save();
+}
+render();
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeM()}));
+</script>
+</body>
+</html>
